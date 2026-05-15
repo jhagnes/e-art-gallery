@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e 미술관-자연물전시실</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 전역 설정 및 레이아웃 (원본 유지) --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #e8f5e9;
+        }
+
+        .museum-viewport {
+            width: 100%; height: 100%;
+            position: relative;
+        }
+
+        .page-item {
+            display: none;
+            width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+            justify-content: center; align-items: center;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .page-item.active { display: flex; }
+
+        /* 내비게이션 영역 */
+        .nav-zone {
+            position: fixed; top: 150px; width: 15%; height: calc(100% - 150px);
+            z-index: 1000; cursor: pointer;
+        }
+        #nav-right { right: 0; } 
+        #nav-left { left: 0; }  
+
+        .audio-container { position: absolute; top: 40px; right: 45px; cursor: pointer; z-index: 2000; }
+        .audio-icon-img { width: 70px; height: auto; }
+        .tip-button { 
+            background-color: #fff; border: none; padding: 20px; 
+            cursor: pointer; font-family: 'Gaegu', cursive; font-weight: 700; font-size: 1.5rem; 
+            transition: all 0.3s; box-shadow: 5px 5px 5px rgba(0,0,0,0.1); width: 100%;
+            position: relative; z-index: 2000;
+        }
+        .tip-button:hover { transform: translateY(-2px); box-shadow: 7px 7px 10px rgba(0, 0, 0, 0.15); }
+
+        .intro-text-content { text-align: center; font-family: 'Gaegu', cursive; }
+        .intro-text-content p { font-size: 2rem; font-weight: 400; margin: 8px 0; line-height: 1.4; color: black; }
+
+        .gallery-container { display: flex; align-items: center; gap: 60px; position: relative; z-index: 500; font-family: 'Nanum Gothic', sans-serif; }
+        .flip-card { background-color: transparent; width: 850px; height: 650px; perspective: 2000px; cursor: pointer; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.8s; transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; }
+        .frame-wrapper { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .artwork-img { width: 95%; height: 95%; object-fit: cover; position: relative; z-index: 1; }
+        .frame-wrapper::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('5_자연물(연두)/액자.png'); background-size: 100% 100%; background-repeat: no-repeat; z-index: 2; pointer-events: none; }
+        .flip-card-back { transform: rotateY(180deg); }
+        .description-box { width: 100%; height: 100%; background-color: white; padding: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; line-height: 2.2; font-size: 1.2rem; color: #333; }
+        .info-panel { display: flex; flex-direction: column; gap: 25px; }
+        .index-card { background: white; padding: 40px; border: none; box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); min-width: 350px; text-align: left; }
+        .index-card h2 { font-size: 1.65rem; margin-bottom: 15px; font-weight: 600; }
+        .index-card p { font-size: 1.2rem; color: #666; margin-bottom: 3px; }
+        .bottom-story { position: absolute; bottom: 40px; right: 40px; text-align: right; font-family: 'Gaegu', cursive; font-size: 2rem; color: black; line-height: 1.4; pointer-events: none; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 10000; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 500px; padding: 50px; border-radius: 15px; text-align: center; }
+        .modal-close-btn { margin-top: 30px; padding: 10px 30px; background: #c3ecd6; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        /* 홈으로 돌아가기 버튼 */
+        .home-btn {
+            display: none;
+            position: absolute;
+            bottom: 230px;
+            right: 300px; 
+            padding: 15px 30px;
+            background-color: rgba(255, 255, 255, 0.404);
+            color: #007b12;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Gaegu', cursive;
+            font-size: 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            z-index: 5000;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .home-btn:hover { background-color: rgba(255, 255, 255, 1); transform: scale(1.05); }
+    </style>
+</head>
+<body onclick="handleFirstClick()">
+
+<audio id="bgMusic" src="오디오파일/자연배경음.mp3" loop></audio>
+
+<div id="nav-right" class="nav-zone" onclick="changePage(1, event)"></div> 
+<div id="nav-left" class="nav-zone" onclick="changePage(-1, event)"></div>
+
+<div class="museum-viewport">
+    <div class="page-item active" id="page1" style="background-image: url('5_자연물(연두)/꽃배경.png');">
+        <div class="intro-text-content">
+            <p>엇!! 바닥에서 초록색 물감을 발견했어요!</p>
+            <p>이걸로 무엇을 할 수 있을까요?</p>
+            <p>이걸로 친구의 선물을 만들 수 있을까요?</p>
+            <p>그렇다면 친구의 선물로 무엇을 만들면 좋을까요?</p>
+            <p>길을 따라가며 함께 아이디어를 모아봐요!</p>
+            <p>음… 과연 어떤 선물이 좋을까요?</p>
+        </div>
+    </div>
+
+    <div class="page-item" id="page2" style="background-image: url('5_자연물(연두)/꽃배경.png');">
+        <div class="audio-container" onclick="playVoice(2)">
+            <img src="5_자연물(연두)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="voiceTag2"><source src="오디오파일/자연녹음_신하선.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="5_자연물(연두)/신하선작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>봄이 되면서 캠퍼스 내에 여러 식물과 꽃들이 자라고 떨어졌어요. 학교를 돌아다니면서 마음에 드는 자연물로 작품을 만들러 나왔어요. 처음에는 내가 좋아하는 벚꽃에 집중하며 걸었는데 학교에는 너무 다양한 꽃들과 잎이 많았어요! 잘 보이지 않았던 잔꽃이나 낙옆들도 발견하고 진한 노란 색의 개나리나 빨갛고 보라색인 철쭉도 발견했어요. 작품의 가운데에 있는 벚꽃잎은 친구들과 돌아다니며 우연히 손에 잡은 꽃잎이에요. 날아가는 벚꽃을 잡으면 소원이 이뤄진데요! 학교를 걸으면서 마음에 드는 꽃과 잎을 다 모았는데, 어떻게 붙일지 고민이 되었어요. 그러다가 동그라미 모양으로 붙이고 싶었고, 알록달록한 꽃과 잎을 붙였어요. 그런데 며칠이 지나니 꽃의 색이 갈색으로 변했어요. 자연의 아름다움과 변화를 볼 수 있어서 신기했어요.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>동그라미 꽃과 잎</h2><p>신하선, 2026</p><p>꽃잎을 잡으면 소원이 이루어진대요~</p></div>
+                <button class="tip-button" onclick="showModal(2, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>어여쁜 꽃님이가 꽃가루를 흩날리며 길을 안내해주네요. 함께 따라가보아요.</p><p>아! 꽃과 같은자연물들로 만든 작품들을 보니 마음이 맑아지고, 마음껏 계절을 즐길 수 있는 것 같아요.</p></div>
+        <div id="tipModal2" class="modal-overlay" onclick="closeModal(2)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">빨간색, 노란색, 보라색 꽃들은 왜 각각 그런 색을 가지게 되었을까? 누가 왜 그렇게 만들었을까? 라고 질문해보세요.</p><button class="modal-close-btn" onclick="closeModal(2)">닫기</button></div></div>
+    </div>
+
+    <div class="page-item" id="page3" style="background-image: url('5_자연물(연두)/꽃배경.png');">
+        <div class="audio-container" onclick="playVoice(3)">
+            <img src="5_자연물(연두)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="voiceTag3"><source src="오디오파일/자연녹음_김지호.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="5_자연물(연두)/김지호작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>이 작품은 액자를 예쁘게 꾸미는 것보다, 마음에 드는 자연의 조각들을 모으는 과정에 더 집중해서 만들었어요. 처음에는 둥글고 오목한 팬지꽃 잎 안에 벚꽃잎이 쏙 들어가 있는 모습이 예뻐서 액자에 붙여보았어요. 그런데 가만히 생각해보니, 벚꽃잎이 수많은 곳 중에서 하필 그곳에 우연히 떨어졌기 때문에 더 아름다워 보인다는 걸 깨달았어요. 그래서 제 액자에도 그런 우연한 아름다움을 담아보고 싶어졌어요. 벚나무 아래에 서서 빈 액자를 들고, 벚꽃잎이 바람에 날려 액자 위로 떨어지기를 가만히 기다렸어요. 액자 오른쪽 아래에 있는 세 개의 벚꽃잎은 제가 붙인 게 아니라 하늘에서 우연히 톡 하고 떨어진 거예요. 그리고 길에서 주운 깨진 도자기 조각도 함께 붙여보았어요. 처음 발견했을 때 색깔이 참 예뻤거든요. 도자기는 사람이 만든 물건이지만, 사실 흙을 불에 구워서 만든 거라 자연과 아주 비슷하다고 생각했어요. 그래서 제가 직접 붙인 벚꽃잎과 하늘에서 우연히 떨어진 벚꽃잎들 사이에 이 도자기 조각을 붙여보았어요.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>우연히 꾸며준 액자</h2><p>김지호, 2026</p><p>벚꽃은 언제 보아도 참 예뻐요</p></div>
+                <button class="tip-button" onclick="showModal(3, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>돌멩이 친구가 데굴데굴 굴러가요. 데굴데굴 같이 구르며 따라가봐요.</p><p>놀이터에 굴러다니는 돌, 푸릇푸릇한 나뭇잎, 맑은 냄새를 풍기는 흙 등 뭐든지 다 좋은것 같아요!</p></div>
+        <div id="tipModal3" class="modal-overlay" onclick="closeModal(3)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;"> "바람이 톡 하고 떨어트린 꽃잎이네! 우리가 직접 따서 붙인 꽃과 바람이 떨어트린 꽃에는 어떤 차이가 있을까?" 라고 질문해보아요. 그림과 관련된 장면을 상상해보며 아이가 스스로 비교해보며 미적 체험을 할 수 있게 해보세요.</p><button class="modal-close-btn" onclick="closeModal(3)">닫기</button></div></div>
+    </div>
+
+    <div class="page-item" id="page4" style="background-image: url('5_자연물(연두)/꽃배경.png');">
+        <div class="audio-container" onclick="playVoice(4)">
+            <img src="5_자연물(연두)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="voiceTag4"><source src="오디오파일/자연녹음_사호.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="5_자연물(연두)/사호작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>이 작품은 밖에 떨어져 있는 꽃잎, 잎을 모아서 배치한 것이에요. 평소에는 무심코 밟아 지나가는 낙엽과 꽃잎에 주목하여 자연의 아름다움을 담아봤어요. 특히 벚꽃은 예쁘게 피어 있는 기간이 짧은데, 이 때 많이 피어 있었어서 그 순간을 담아보자 떨어져 있었던 벚꽃을 많이 모았어요. 그리고 꽃잎이나 낙엽이 바닥에 떨어져 있는 모습을 표현하고 싶어서 오른쪽 밑에 모아서 배치해봤어요. 잎과 벚꽃을 섞어 배치한 것은 실제 자연 풍경에 가까운 분위기를 표현하고 싶었기 때문이에요. 밖에서 보는 벛꽃 아래에는 꽃잎뿐만 아니라 다양한 잎과 작은 가지도 함께 떨어지고 있어요. 그 모습을 떠올리면서 꽃잎과 잎을 함께 배치했어요.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>사호언니제목?</h2><p>사호, 2026</p><p>짧은 순간의 기록</p></div>
+                <button class="tip-button" onclick="showModal(4, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>노란 개나리 친구가 우리를 반겨주네요.</p><p>이번에는 어디로 갈까나?~</p></div>
+        <div id="tipModal4" class="modal-overlay" onclick="closeModal(4)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">"둥글게모인 식물들 중 네눈에가장 먼저띄는건 뭐야? 어떤 이유에서그랬어?" 처럼 아이가 집중하는 부분을 먼저 궁금해하고 그 이유를 경청해보세요.</p><button class="modal-close-btn" onclick="closeModal(4)">닫기</button></div></div>
+    </div>
+
+    <div class="page-item" id="page5" style="background-image: url('5_자연물(연두)/꽃배경.png');">
+        <div class="audio-container" onclick="playVoice(5)">
+            <img src="5_자연물(연두)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="voiceTag5"><source src="오디오파일/자연녹음_안정현.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="5_자연물(연두)/안정현작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>봄을 맞아 꽃이 활짝 핀 캠퍼스를 돌아다니면서 봄의 흔적을 최대한 모아보려고 했습니다. <br> 바람에 흩날리다 떨어진 꽃과 꽃잎들을 주워서 액자 속에 담아보았고, 연분홍빛의 벚꽃과 쨍한 노란색의 개나리를 조화롭게 배치하여 생동감을 표현하고자 했습니다. 특히 꽃들의 배치에 신경을 많이 썼는데 조금은 흩날리는 모습을 표현하고 싶어서 중간을 비워둔 채 구성을 했습니다. 그래서 하단에는 꽃잎들이 소복이 쌓여있는 길의 모습을 표현하기 위해 밀도있게 구성해보았고, 상단은 꽃의 가지까지 함께 붙여서 꽃이 하늘에 날리고 있는 모습을 더 강조해보았습니다. 이 작품을 통해 봄이 품고 있는 색들의 조화로움, 그리고 그 안에서 제 눈으로 포착한 아름다움을 함께 담아내고 싶었습니다.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>봄의 흔적을 모아모아</h2><p>안정현, 2026</p><p>봄의 색들의 조화로 만들어진 아름다움</p></div>
+                <button class="tip-button" onclick="showModal(5, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>여러명의 벚꽃 친구들이 우릴 반겨줘요!</p><p>같이 따라가봐요!</p></div>
+        <div id="tipModal5" class="modal-overlay" onclick="closeModal(5)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">"흩날리는 꽃들은 어디로 가려고 하는걸까?" 라고 아이에게 물어봐 주세요. 물활론적 사고를 살려 아이의 상상력을 향상시키고자 하는 질문이에요.</p><button class="modal-close-btn" onclick="closeModal(5)">닫기</button></div></div>
+    </div>
+
+    <div class="page-item" id="page6" style="background-image: url('5_자연물(연두)/꽃배경.png');">
+        <div class="audio-container" onclick="playVoice(6)">
+            <img src="5_자연물(연두)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="voiceTag6"><source src="오디오파일/자연녹음_신채민.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="5_자연물(연두)/신채민작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>이 작품은 자연에서 직접 찾은 낙엽과 꽃을 이용해 나비 모양으로 만든 활동이에요. <br> 한쪽 날개에는 가을 느낌이 나는 마른 낙엽을 붙여 조용하고 차분한 분위기를 나타냈고, 다른 한쪽 날개에는 봄 느낌이 나는 보라색과 노란색 꽃을 붙여 밝고 따뜻한 분위기를 표현했어요. 서로 다른 계절의 자연물을 한 작품 안에 함께 넣어 계절이 바뀌고 자연이 계속 이어진다는 모습을 나타내고자 했어요. 또 나비 모양으로 만들어 자연 속 생명의 아름다움과 자유로운 느낌도 함께 표현했어요.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>겨울과 봄의 나비</h2><p>신채민, 2026</p><p>나비는 계절의 가운데에 있어요</p></div>
+                <button class="tip-button" onclick="showModal(6, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>나비가 따라오라고 손짓을 하네요!</p><p>우리 친구도 다가오는 여름을 제대로 즐기며 계절이 주는 감동을 느꼈으면 좋겠어요!</p></div>
+        <div id="tipModal6" class="modal-overlay" onclick="closeModal(6)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">"가을과 봄 중 선택할 수 있다면, 나비는 어디로 날아가고 싶을것 같아?" 라고 질문 해보세요.</p><button class="modal-close-btn" onclick="closeModal(6)">닫기</button></div></div>
+    </div>
+</div>
+
+<button id="homeBtn" class="home-btn" onclick="location.href='index.html#page2'">홈으로 돌아가기</button>
+
+<script>
+    let currentIdx = 1; // 현재 페이지 인덱스
+    const maxIdx = 6;   // 최대 페이지 수
+    let musicStarted = false; // 음악 시작 여부
+    const bgMusic = document.getElementById('bgMusic');
+
+    // 첫 클릭 시 배경음악 재생 함수
+    function handleFirstClick() {
+        if (!musicStarted) {
+            bgMusic.play();
+            musicStarted = true;
+            console.log("배경음악이 시작되었습니다.");
+        }
+    }
+
+    // 페이지 전환 함수 (오른쪽: 다음 / 왼쪽: 이전)
+    function changePage(dir, event) {
+        event.stopPropagation(); // 중복 이벤트 방지
+
+        // 음악이 안 켜져 있으면 음악 먼저 켜고 페이지는 그대로 둠
+        if (!musicStarted) {
+            handleFirstClick();
+            return;
+        }
+
+        let nextIdx = currentIdx + dir;
+        
+        // 범위 체크
+        if (nextIdx < 1 || nextIdx > maxIdx) return;
+
+        // 목소리 녹음 중지
+        stopAllVoices();
+
+        // 페이지 클래스 교체
+        document.getElementById(`page${currentIdx}`).classList.remove('active');
+        document.getElementById(`page${nextIdx}`).classList.add('active');
+        currentIdx = nextIdx;
+
+        // [추가] 마지막 페이지(6번)에서만 홈 버튼 표시 로직
+        const homeBtn = document.getElementById('homeBtn');
+        if (currentIdx === maxIdx) {
+            homeBtn.style.display = 'block';
+        } else {
+            homeBtn.style.display = 'none';
+        }
+    }
+
+    // 목소리 녹음 중지
+    function stopAllVoices() {
+        for (let i = 2; i <= maxIdx; i++) {
+            const voice = document.getElementById(`voiceTag${i}`);
+            if (voice) {
+                voice.pause();
+                voice.currentTime = 0;
+            }
+        }
+    }
+
+    function toggleFlip(el) { el.classList.toggle('flipped'); }
+
+    function playVoice(num) {
+        const voice = document.getElementById(`voiceTag${num}`);
+        if (voice.paused) { voice.play(); } 
+        else { voice.pause(); voice.currentTime = 0; }
+    }
+
+    function showModal(num, event) {
+        event.stopPropagation();
+        document.getElementById(`tipModal${num}`).style.display = 'flex';
+    }
+
+    function closeModal(num) {
+        document.getElementById(`tipModal${num}`).style.display = 'none';
+    }
+
+    // 배경 클릭 시 모달 닫기 로직
+    window.onclick = function(event) {
+        if (event.target.className === 'modal-overlay') {
+            const openModals = document.querySelectorAll('.modal-overlay');
+            openModals.forEach(modal => modal.style.display = 'none');
+        }
+        
+        // 배경음악 자동 재생 보완
+        if (bgMusic.paused && musicStarted) {
+            bgMusic.play();
+        }
+    }
+</script>
+
+</body>
+</html>

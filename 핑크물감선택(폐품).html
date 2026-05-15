@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e 미술관-폐품전시실</title>
+    <!-- 구글 폰트 원본 유지 -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        
+
+        /* --- 전역 설정 및 레이아웃 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #ffe0fc; /* 로딩 전 배경색 */
+        }
+
+        .museum-viewport {
+            width: 100%; height: 100%;
+            position: relative;
+        }
+
+        .page-item {
+            display: none;
+            width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+            font-family: 'Nanum Gothic', sans-serif;
+            background: url('6_폐품(핑크)/폐품배경.png') no-repeat center center fixed;
+            background-size: cover;
+            justify-content: center; align-items: center;
+        }
+
+        .page-item.active {
+            display: flex;
+        }
+
+        /* 내비게이션 존 (오른쪽: 다음 1->2 / 왼쪽: 이전) */
+        .nav-zone {
+            position: fixed; top: 0; width: 15%; height: 100%;
+            z-index: 1000;
+            cursor: pointer;
+        }
+        #nav-right { right: 0; } 
+        #nav-left { left: 0; }  
+
+        /* 인터랙티브 요소 (z-index 우선순위 확보) */
+        .audio-container { position: absolute; top: 40px; right: 45px; cursor: pointer; z-index: 2000; }
+        .audio-icon-img { width: 70px; height: auto; }
+        .tip-button { 
+            background-color: #fff; border: none; padding: 20px; 
+            cursor: pointer; font-family: 'Gaegu', cursive; font-weight: 700; font-size: 1.5rem; 
+            transition: all 0.3s; box-shadow: 5px 5px 5px rgba(0,0,0,0.1); width: 100%;
+            position: relative; z-index: 2000;
+        }
+        .tip-button:hover { transform: translateY(-2px); box-shadow: 7px 7px 10px rgba(0, 0, 0, 0.15); }
+
+        /* --- 원본 갤러리/액자 CSS (절대 수정 없음) --- */
+        .gallery-container { display: flex; align-items: center; gap: 60px; position: relative; z-index: 500; }
+        .flip-card { background-color: transparent; width: 850px; height: 650px; perspective: 2000px; cursor: pointer; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.8s; transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; }
+        .frame-wrapper { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .artwork-img { width: 95%; height: 95%; object-fit: cover; position: relative; z-index: 1; }
+        .frame-wrapper::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('6_폐품(핑크)/액자.png'); background-size: 100% 100%; background-repeat: no-repeat; z-index: 2; pointer-events: none; }
+        .flip-card-back { transform: rotateY(180deg); }
+        .description-box { width: 100%; height: 100%; background-color: white; padding: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; line-height: 2.2; font-size: 1.2rem; color: #333; }
+        .info-panel { display: flex; flex-direction: column; gap: 25px; }
+        .index-card { background: white; padding: 40px; border: none; box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); min-width: 350px; font-family: 'Nanum Gothic', sans-serif; text-align: left; }
+        .index-card h2 { font-size: 1.65rem; margin-bottom: 15px; font-weight: 600; }
+        .index-card p { font-size: 1.2rem; color: #666; margin-bottom: 3px; }
+        .bottom-story { position: absolute; bottom: 40px; right: 40px; background: none; padding: 0; max-width: 2000px; box-shadow: none; text-align: right; font-family: 'Gaegu', cursive; font-size: 2rem; font-weight: 400; color: black; line-height: 1.4; pointer-events: none; }
+
+        /* 모달 스타일 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 10000; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 500px; padding: 50px; border-radius: 15px; text-align: center; }
+        .modal-close-btn { margin-top: 30px; padding: 10px 30px; background: #ffe0fc; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        .home-btn {
+            display: none; /* 기본적으로는 숨겨둠 */
+            position: absolute;
+            bottom: 230px;
+            right: 300px; 
+            padding: 15px 30px;
+            background-color: rgba(255, 255, 255, 0.404); /* 불투명한 흰색 */
+            color: #df72be;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Gaegu', cursive;
+            font-size: 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            z-index: 5000; /* 내비게이션 영역보다 높게 */
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .home-btn:hover {
+            background-color: rgba(255, 255, 255, 1); /* 마우스 올리면 진해짐 */
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+<!-- 내비게이션 클릭 영역 -->
+<div id="nav-right" class="nav-zone" onclick="changePage(1)"></div> 
+<div id="nav-left" class="nav-zone" onclick="changePage(-1)"></div>
+
+<div class="museum-viewport">
+
+    <!-- 1번 - 사호 -->
+    <div class="page-item active" id="page1">
+        <div class="audio-container" onclick="playAudio(1)">
+            <img src="6_폐품(핑크)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="audioTag1"><source src="오디오파일/폐품녹음_사호.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="6_폐품(핑크)/사호작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>폐품을 활용해서 화물 열차를 만들었어요.<br>과자 상자, 플라스틱 용기, 휴지심, 빨대, 캡슐을 사용했어요. 처음에는 어렸을 때 동생이 많이 놀았던 전차 놀잇감을 상상하면서 만들었는데, 열리는 작은 과자 상자를 보고 물건을 넣을 수 있는 화물 열차가 떠올랐어요. 실제로 색종이로 편지를 만들어서 넣어봤어요. 또한 뒷 부분에는 빨대를 이용해, 열차를 움직일 수 있게 만들었어요. 앞 부분에는 캡슐과 셀로판지를 활용해서 전조등을 붙였어요. 처음에는 어떻게 만들어야 할지 모르겠었는데 하다 보니까 아이디어가 떠올리고 생각보다 만족스러운 작품이 되었어요.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>사호언니제목?</h2><p>사호, 2026</p><p>좋아하는 과자 상자로 만들었어요!</p></div>
+                <button class="tip-button" onclick="showModal(1, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>핑크색 물감을 주웠더니 열차가 나타났어요!</p><p>이걸 타고 생일 선물 아이디어를 찾으러 가볼까요?</p></div>
+        <div id="tipModal1" class="modal-overlay" onclick="closeModal(1)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">“이 열차는 어디로 갈까?” 등 아이가 다양한 사고를 할 수 있게 이야기해 보세요.</p><button class="modal-close-btn" onclick="closeModal(1)">닫기</button></div></div>
+    </div>
+
+    <!-- 2번 - 안정현 -->
+    <div class="page-item" id="page2">
+        <div class="audio-container" onclick="playAudio(2)">
+            <img src="6_폐품(핑크)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="audioTag2"><source src="오디오파일/폐품녹음_안정현.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="6_폐품(핑크)/안정현작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>제가 오늘 만든 작품은 어린 시절 제가 책에서 보던 로봇 영웅을 떠올리며 재구성 해본 무지개 로봇입니다. <br> 로봇 장난감을 만들고 싶다는 마음에서 출발하여 페트병과 우유곽, 요구르트 뚜껑, 일회용 컵 뚜껑, 휴지심 등 다양한 재료들을 모았습니다. 모아온 재료들을 활용해 우유곽으로 몸체를 만들고, 휴지심으로 팔을 완성했습니다. 얼굴 부분에는 수수깡과 색종이를 알록달록하게 활용해 꾸몄는데 이는 로봇 내부의 복잡한 회로를 다채로운 색감으로 생동감 있게 표현하고자 한 것입니다. 로봇의 눈은 커다란 병뚜껑으로 만들어서 레이더를 쏘듯 무엇이든 날카롭게 관찰할 수 있는 모습을 표현했습니다. 투명한 컵 안에 색종이를 구겨 넣어 만든 다리는 언제든 로켓처럼 하늘로 솟아오를 수 있는 이 로봇만의 초능력을 표현한 것입니다.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>날아라! 알록달록 로봇맨</h2><p>안정현, 2026</p><p>꿈에 그리던 나만의 로봇</p></div>
+                <button class="tip-button" onclick="showModal(2, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>로봇이 선물 아이디어 찾기를 도와준대요!</p><p>좀 더 가면 힌트가 있다고 하네요?</p></div>
+        <div id="tipModal2" class="modal-overlay" onclick="closeModal(2)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">“다양한 색의 수수깡이 있네. 어떤 색이 마음에 들어?” 등 보이는 그대로 묘사하고 아이의 생각을 물어보세요.</p><button class="modal-close-btn" onclick="closeModal(2)">닫기</button></div></div>
+    </div>
+
+    <!-- 3번 - 신채민 -->
+    <div class="page-item" id="page3">
+        <div class="audio-container" onclick="playAudio(3)">
+            <img src="6_폐품(핑크)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="audioTag3"><source src="오디오파일/폐품녹음_신채민.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="6_폐품(핑크)/신채민작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>이 작품은 여러 가지 폐품과 재활용품을 이용해 입이 움직이는 토끼 인형을 만든 활동이에요. <br> 버려지는 물건들을 새롭게 바꾸어 재미있게 표현해 보고자 했어요. 토끼의 입 부분에는 다 쓴 작은 틴케이스를 붙여 입을 열고 닫을 때 딱딱 소리가 나도록 만들었어요. 그래서 눈으로만 보는 작품이 아니라 소리와 움직임도 함께 느낄 수 있도록 표현했어요. 또 알약 포장 안에 작은 종이 조각을 넣어 눈에 붙여 눈동자가 움직이는 것처럼 보이게 했어요. 버려진 물건의 모양과 특징을 살펴보며 어디에 활용할 수 있을지 생각하는 과정이 재미있었고, 평소에는 버려지던 물건도 새로운 아이디어를 통해 멋진 작품 재료가 될 수 있다는 점을 알게 되었어요.</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>수다쟁이 토끼</h2><p>신채민, 2026</p><p>입을 끊임없이 움직이는 토끼예요</p></div>
+                <button class="tip-button" onclick="showModal(3, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>로봇이 안내해준 길을 갔다가 토끼를 만났어요!</p><p>따라가볼까요?</p></div>
+        <div id="tipModal3" class="modal-overlay" onclick="closeModal(3)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">아이가 “토끼의 입이 너무 크다!”라고 말했다면, “토끼의 입이 진짜 크네”라고 아이의 말을 다시 반복하며 공감한 뒤, “왜 이렇게 입이 클까?”처럼 개방적인 질문을 해 보세요.</p><button class="modal-close-btn" onclick="closeModal(3)">닫기</button></div></div>
+    </div>
+
+    <!-- 4번 - 신하선 -->
+    <div class="page-item" id="page4">
+        <div class="audio-container" onclick="playAudio(4)">
+            <img src="6_폐품(핑크)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="audioTag4"><source src="오디오파일/폐품녹음_신하선.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="6_폐품(핑크)/신하선작품.jpg" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>저는 어릴 때 실제로 가장 좋아했던 놀이는 요리 놀이였어요. <br> 아빠와 엄마에게 처음 받았던 크리스마스 선물도 주방놀이 세트였어요. 엄마의 주방과 닮은 장난감을 가지고 요리를 하고 친구들에게 나눠주는 상상놀이도 했어요. 나중에 학교에 다니면서도 레고로 집이나 주방을 만들었고, 멋진 식당과 베이커리를 열어서 요리를 하는 상상을 했었어요. 이제는 집에서 실제로 요리를 하고 있지만, 재활용품을 이용해 장난감을 창작하려고 하니까 가장 좋아했던 놀이를 떠올리게 되었고 만들게 되었어요. 신발 상자로 틀을 만들고 색종이로 꾸미며줬어요. 냄비와 같은 조리 도구들을 만들었어요. 머리 속으로 상상했던 장난감이 생각보다 더 잘 만들어져서 신기하고 재밌었어요!</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>나만의 주방</h2><p>신하선, 2026</p><p>보글보글 감자튀김을 만들어요</p></div>
+                <button class="tip-button" onclick="showModal(4, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>토끼를 따라갔더니 주방을 발견!</p><p>여기서 무언가 만들어볼까요?</p></div>
+        <div id="tipModal4" class="modal-overlay" onclick="closeModal(4)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">“이건 어떤 폐품을 활용해서 만든 것 같아?” 처럼 아이가 재료를 탐색할 수 있는 질문을 해 보세요.</p><button class="modal-close-btn" onclick="closeModal(4)">닫기</button></div></div>
+    </div>
+
+    <!-- 5번 - 김지호 -->
+    <div class="page-item" id="page5">
+        <div class="audio-container" onclick="playAudio(5)">
+            <img src="6_폐품(핑크)/소리아이콘.png" class="audio-icon-img" alt="소리아이콘">
+            <audio id="audioTag5"><source src="오디오파일/폐품녹음_김지호.m4a" type="audio/mp4"></audio>
+        </div>
+        <div class="gallery-container">
+            <div class="flip-card" onclick="toggleFlip(this)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front"><div class="frame-wrapper"><img src="6_폐품(핑크)/김지호작품.png" class="artwork-img"></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>저는 음악을 연주하는 밴드 활동을 오래 해서 악기에 관심이 많아요. 여러 가지 폐품들을 살펴보다가 문득 '이걸로 드럼을 만들어보면 어떨까?' 하는 생각이 들었어요. 빈 상자와 플라스틱 통들을 하나씩 두드려보니, 물건마다 각자 다르게 재미있는 소리가 나는 게 흥미로웠어요. 그래서 이 물건들을 모아 멋진 드럼 세트를 만들기로 했죠. 드럼은 손에 든 스틱으로 쳐서 소리를 내기도 하지만, 발로 꾹 밟아서 움직이는 '페달'로 소리를 내기도 해요. 저는 발로 밟으면 진짜로 움직이는 페달을 만들고 싶어서 아주 오랫동안 고민했어요. 하지만 생각보다 기계를 만드는 것이 너무 어려워서, 결국 페달이 제대로 움직이게 완성하지는 못했답니다. 페달을 만드는 데 시간을 다 쓰는 바람에 드럼을 알록달록 예쁘게 꾸밀 시간도 부족해져서, 저에게는 조금 아쉬움이 남는 작품이에요. 비록 화려하고 예쁘게 꾸며진 드럼은 아니지만, 크기와 모양이 다른 통들을 두드리면 각각 어떤 소리가 날지 한번 상상해 보세요!</p></div></div></div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <div class="index-card"><h2>잃어버린 소리를 찾아서</h2><p>김지호, 2026</p><p>저는 사실 드럼을 칠 줄 모른답니다</p></div>
+                <button class="tip-button" onclick="showModal(5, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
+            </div>
+        </div>
+        <div class="bottom-story"><p>신나는 소리가 들리네요!</p><p>이제 곧 파티가 시작될 것 같아요!</p></div>
+        <div id="tipModal5" class="modal-overlay" onclick="closeModal(5)"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="font-size: 1.5rem; margin-bottom: 15px;">부모님들에게 알려드립니다!</h3><p style="font-size: 1.05rem; line-height: 1.6;">“이 드럼을 치면 어떤 소리가 나올까?” 등 아이가 창의적인 사고를 할 수 있도록 질문해 보세요.</p><button class="modal-close-btn" onclick="closeModal(5)">닫기</button></div></div>
+    </div>
+
+</div>
+
+<button id="homeBtn" class="home-btn" onclick="location.href='index.html#page2'">홈으로 돌아가기</button>
+
+<script>
+    let currentIdx = 1;
+    const maxIdx = 5;
+
+    function changePage(dir) {
+        let nextIdx = currentIdx + dir;
+        if (nextIdx < 1 || nextIdx > maxIdx) return;
+        
+        stopAudio(currentIdx);
+        document.getElementById(`page${currentIdx}`).classList.remove('active');
+        document.getElementById(`page${nextIdx}`).classList.add('active');
+        currentIdx = nextIdx;
+
+        // [추가된 로직] 마지막 페이지(maxIdx)일 때만 홈 버튼 보여주기
+        const homeBtn = document.getElementById('homeBtn');
+        if (currentIdx === maxIdx) {
+            homeBtn.style.display = 'block';
+        } else {
+            homeBtn.style.display = 'none';
+        }
+    }
+
+    function toggleFlip(el) { el.classList.toggle('flipped'); }
+
+    function playAudio(num) {
+        const audio = document.getElementById(`audioTag${num}`);
+        if (audio.paused) { audio.play(); } 
+        else { audio.pause(); audio.currentTime = 0; }
+    }
+
+    function stopAudio(num) {
+        const audio = document.getElementById(`audioTag${num}`);
+        if (audio) { audio.pause(); audio.currentTime = 0; }
+    }
+
+    function showModal(num, event) {
+        event.stopPropagation();
+        document.getElementById(`tipModal${num}`).style.display = 'flex';
+    }
+
+    function closeModal(num) {
+        document.getElementById(`tipModal${num}`).style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target.className === 'modal-overlay') {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
