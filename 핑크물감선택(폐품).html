@@ -18,10 +18,7 @@
             background-color: #ffe0fc; /* 로딩 전 배경색 */
         }
 
-        .museum-viewport {
-            width: 100%; height: 100%;
-            position: relative;
-        }
+        .museum-viewport { position: absolute; width: 1800px; height: 985px; left: 50%; top: 50%; transform: translate(-50%, -50%); transform-origin: center center; }
 
         .page-item {
             display: none;
@@ -126,7 +123,7 @@
                 </div>
             </div>
             <div class="info-panel">
-                <div class="index-card"><h2>사호언니제목?</h2><p>사호, 2026</p><p>좋아하는 과자 상자로 만들었어요!</p></div>
+                <div class="index-card"><h2>마음을 전하는 화물 열차</h2><p>사호, 2026</p><p>좋아하는 과자 상자로 만들었어요!</p></div>
                 <button class="tip-button" onclick="showModal(1, event)" style="color: rgb(80, 83, 83);">부모 상호작용 꿀팁</button>
             </div>
         </div>
@@ -188,7 +185,7 @@
             <div class="flip-card" onclick="toggleFlip(this)">
                 <div class="flip-card-inner">
                     <div class="flip-card-front"><div class="frame-wrapper"><img src="6_폐품(핑크)/신하선작품.jpg" class="artwork-img"></div></div>
-                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>저는 어릴 때 실제로 가장 좋아했던 놀이는 요리 놀이였어요. <br> 아빠와 엄마에게 처음 받았던 크리스마스 선물도 주방놀이 세트였어요. 엄마의 주방과 닮은 장난감을 가지고 요리를 하고 친구들에게 나눠주는 상상놀이도 했어요. 나중에 학교에 다니면서도 레고로 집이나 주방을 만들었고, 멋진 식당과 베이커리를 열어서 요리를 하는 상상을 했었어요. 이제는 집에서 실제로 요리를 하고 있지만, 재활용품을 이용해 장난감을 창작하려고 하니까 가장 좋아했던 놀이를 떠올리게 되었고 만들게 되었어요. 신발 상자로 틀을 만들고 색종이로 꾸미며줬어요. 냄비와 같은 조리 도구들을 만들었어요. 머리 속으로 상상했던 장난감이 생각보다 더 잘 만들어져서 신기하고 재밌었어요!</p></div></div></div>
+                    <div class="flip-card-back"><div class="frame-wrapper"><div class="description-box"><p>저는 어릴 때 가장 좋아했던 놀이는 요리 놀이였어요. 아빠와 엄마에게 처음 받았던 크리스마스 선물도 주방놀이 세트였어요. 엄마의 주방과 닮은 장난감을 가지고 요리를 하고 친구들에게 나눠주는 상상놀이가 가장 재밌었어요. 나중에는 레고로 집이나 주방을 만들고, 멋진 식당과 베이커리를 열어서 요리를 하는 상상을 했어요. 그래서 재활용품을 이용해 장난감 만들기를 할 때 가장 좋아했던 놀이를 떠올리게 되었고 만들게 되었어요. 신발 상자로 틀을 만들고 색종이로 꾸미며줬어요. 냄비와 같은 조리 도구들을 만들었어요. 머리 속으로 상상했던 장난감이 생각보다 더 잘 만들어져서 신기하고 재밌었어요!</p></div></div></div>
                 </div>
             </div>
             <div class="info-panel">
@@ -275,6 +272,22 @@
             event.target.style.display = 'none';
         }
     }
+
+    function resizeViewport() {
+            const viewport = document.querySelector('.museum-viewport');
+            const baseWidth = 1800;  /* 위 CSS에 적은 가로 크기와 똑같이 */
+            const baseHeight = 985; /* 위 CSS에 적은 세로 크기와 똑같이 */
+            
+            const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / baseHeight);
+            
+            // 중앙 정렬 상태를 유지하면서 비율만 축소 확대
+            viewport.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        // 이벤트 리스너 등록 및 즉시 실행
+        window.addEventListener('resize', resizeViewport);
+        document.addEventListener('DOMContentLoaded', resizeViewport);
+        resizeViewport();
 </script>
 
 </body>

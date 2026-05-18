@@ -9,7 +9,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #FEF9E7; }
-        .museum-viewport { position: relative; width: 100%; height: 100%; }
+        .museum-viewport { position: absolute; width: 1800px; height: 985px; left: 50%; top: 50%; transform: translate(-50%, -50%); transform-origin: center center; }
 
         /* 페이지 전환 효과: 1.3초 부드러운 페이드 */
         .page {
@@ -176,12 +176,12 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h3 style="font-size: 1.7rem; margin-bottom: 10px;">나도 표현 해볼래요!</h3>
-                <span style="color: #edb400; font-size: 1.2rem; font-weight: bold; background-color: #fffbe6;"><br>아이가 만들고 싶은것이 있다면,</span><br>
-                <span style="color: #edb400; font-size: 1.2rem; font-weight: bold; background-color: #fffbe6;">자유롭게 만들 수 있는 환경을 조성해주세요.</span><br><br>
+                <span style="color: #262626; font-size: 1.2rem; font-weight: bold; background-color: #ebebeb;"><br>아이가 만들고 싶은것이 있다면,</span><br>
+                <span style="color: #262626; font-size: 1.2rem; font-weight: bold; background-color: #ebebeb;">자유롭게 만들 수 있는 환경을 조성해주세요.</span><br><br>
             </div>
-            <div style="text-align: left; font-size: 1.05rem; line-height: 1.8; color: #2f2f2f; padding: 0 10px;">
-                <p>이런것도 만들수 있공...<br> 저런것도 만들 수 있공...<br><br>
-                <strong>어린이 보물 미술관 인스타그램 주소:</strong> https://www.instagram.com/jhagnes_/ <br></p>
+            <div style="text-align: center; font-size: 1.05rem; line-height: 1.8; color: #2f2f2f; padding: 0 10px;">
+                <p>미술관을 돌아보고 재밌었다면, 표현하고 만들어봐요! <br> <br> 부모님과 함께 만든 작품 사진을 찍어서 아래의 인스타 링크로 공유해주시면 다른 아동들과 함께 감상할 수 있습니다!<br><br>
+                <strong>어린이 보물 미술관 인스타그램 주소:</strong> https://www.instagram.com/kids_treasure_museum?igsh=cGc4Y3ZyOHJ5bDA2&utm_source=qr <br></p>
                 <p>인스타그램에 들어가시면 다양한 예시 작품과 미술관의 소식을 보실 수 있습니다!</p>
             </div>
             <button class="modal-close-btn" onclick="closeModal('newModal')">닫기</button>
@@ -242,6 +242,22 @@
         function closeModal(id) {
             document.getElementById(id).style.display = 'none';
         }
+
+        function resizeViewport() {
+            const viewport = document.querySelector('.museum-viewport');
+            const baseWidth = 1800;  /* 위 CSS에 적은 가로 크기와 똑같이 */
+            const baseHeight = 985; /* 위 CSS에 적은 세로 크기와 똑같이 */
+            
+            const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / baseHeight);
+            
+            // 중앙 정렬 상태를 유지하면서 비율만 축소 확대
+            viewport.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        // 이벤트 리스너 등록 및 즉시 실행
+        window.addEventListener('resize', resizeViewport);
+        document.addEventListener('DOMContentLoaded', resizeViewport);
+        resizeViewport();
     </script>
 </body>
 </html>
